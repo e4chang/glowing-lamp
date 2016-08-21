@@ -1,34 +1,34 @@
-import urllib
+#import urllib
 import time
-# import re
-from HTMLParser import HTMLParser
-urls = ['http://www.thepremiereresidential.com/properties/san-diego/la-jolla-international-gardens/availability/']
-link = urllib.urlopen(urls[0])
-update = link.read()
-
+import re
+from html.parser import HTMLParser
+import urllib.request
+update = ''
+with urllib.request.urlopen('http://www.thepremiereresidential.com/properties/san-diego/la-jolla-international-gardens/availability/') as response:
+   update = str(response.read())
 
 # create a subclass and override the handler methods
 class InitialParser(HTMLParser):
     root_links = []
+    listing_section = False
+    pattern = re.compile('^(\\\\n|\\\\t| )')
     def handle_starttag(self, tag, attrs):
-        if tag == 'a':
+        if tag == 'article':
             for (key, value) in attrs:
-                if key == 'href':
-                    if value not in self.root_links:
-                        print 'adding', value
-                        self.root_links.append(value)
-                    else:
-                        print 'ignoring', value
+                if key == 'class':
+                    self.listing_section = True
+
+    def handle_endtag(self, tag):
+        if tag == 'article':
+            self.listing_section = False
+
+    def handle_data(self, data): 
+        if self.listing_section and not self.pattern.match(data):
+            print(data)
 
 # instantiate the parser and fed it some HTML
 parser = InitialParser()
 parser.feed(update)
-#print parser.root_links
 
 time.sleep(3)
 
-link = urllib.urlopen(urls[0])
-update = link.read()
-parser.feed(update)
-
-#print parser.root_links
